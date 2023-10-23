@@ -1,0 +1,202 @@
+---
+title: "Task2_Nguyen-Nguyen-Dang-Ha"
+author: "Janice"
+date: "2023-10-17"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Libraries
+
+```         
+install.packages("dplyr")
+install.packages("stringr")
+```
+
+## Use Libraries
+
+```{r}
+library(dplyr)
+library(stringr)
+```
+
+## Set up
+
+### Set File Paths
+
+```{r}
+file_paths <- c(
+  "C:/Users/PC/Desktop/Janice/cleaned_sales.csv")
+```
+
+### Load Data
+
+```{r}
+cleaned_data <- read.csv(file_paths)
+```
+
+### Review Data
+
+```{r}
+summary(cleaned_data)
+```
+
+```{r}
+head(cleaned_data)
+```
+
+### Convert the datatype
+
+```{r}
+cleaned_data$Order.Date <- as.Date(cleaned_data$Order.Date)
+```
+
+```{r}
+summary(cleaned_data)
+```
+
+```{r}
+head(cleaned_data)
+```
+
+## Report
+
+> Which was the best Year for sales?
+
+```{r}
+cleaned_data$Year <- as.integer(format(as.Date(cleaned_data$Order.Date, format="%m/%d/%Y"), "%Y"))
+best_year <- aggregate(cleaned_data$Sales, by=list(cleaned_data$Year), FUN=sum)
+best_year <- best_year[which.max(best_year$x), ]
+
+# Rename the columns
+colnames(best_year) <- c("Year", "Sales")
+
+best_year
+```
+
+The best year for sales is 2019.
+
+> How much was earned in the best Year of sales?
+
+```{r}
+best_year[2]
+```
+34460451 was earned in the best year of sales.
+
+> Which was the best month for sales?
+
+```{r}
+cleaned_data$Month <- as.integer(format(as.Date(cleaned_data$Order.Date, format="%m/%d/%Y"), "%m"))
+best_month <- aggregate(cleaned_data$Sales, by=list(cleaned_data$Year, cleaned_data$Month), FUN=sum)
+best_month <- best_month[which.max(best_month$x), ]
+
+# Rename the columns
+colnames(best_month) <- c("Year", "Month", "Sales")
+
+best_month
+```
+
+December is the best month of 2019 for sales.
+
+> How much was earned in the best month of sales?
+
+```{r}
+best_month[3]
+```
+
+4611065 was earned in the best month of sales.
+
+> Which City had the most sales?
+
+```{r}
+city_sales <- aggregate(cleaned_data$Sales, by=list(cleaned_data$City), FUN=sum)
+best_selling_city <- city_sales[which.max(city_sales$x), 1]
+best_selling_city_sales <- max(city_sales$x)
+
+best_selling_city
+best_selling_city_sales
+```
+
+San Francisco had the highest sales of 8259473.
+
+> To maximise the likelihood of customers buying a product, what time should Dibs business be displaying advertisements?
+
+```{r}
+cleaned_data$Hour <- as.integer(substr(cleaned_data$Order.Time, 1, 2))
+hourly_sales <- aggregate(cleaned_data$Sales, by=list(cleaned_data$Hour), FUN=sum)
+best_advertisement_time <- hourly_sales[which.max(hourly_sales$x), 1]
+
+best_advertisement_time
+```
+
+At 7pm, Dibs business should displaying advertisements.
+
+> Which products are most often sold together?
+
+```{r}
+# Find orders with more than one product (i.e., multiple products in the same order)
+multiple_product_orders <- cleaned_data %>%
+  group_by(Order.ID) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+# Create product pairs within each order
+product_pairs <- multiple_product_orders %>%
+  group_by(Order.ID) %>%
+  summarize(ProductPairs = str_c(sort(Product), collapse = ", ")) %>%
+  ungroup()
+
+# Count the frequency of product pairs
+product_pair_counts <- product_pairs %>%
+  count(ProductPairs, sort = TRUE)
+
+# Get the most frequently sold product pairs
+top_product_pairs <- head(product_pair_counts, n = 5)
+
+# Set column names to "ProductPairs" and "Times"
+colnames(top_product_pairs) <- c("ProductPairs", "Times")
+
+# Display the top product pairs
+top_product_pairs
+```
+
+iPhone and Lightning Charging Cable are most often sold together.
+
+> Overall which product sold the most and why do you think it has sold the most?
+
+```{r}
+best_selling_product <- cleaned_data %>%
+  group_by(Product) %>%
+  summarize(TotalQuantity = sum(Quantity.Ordered))
+
+# Sort products by total quantity sold
+best_selling_product <- best_selling_product[order(best_selling_product$TotalQuantity, decreasing = TRUE), ]
+
+best_selling_product
+```
+
+AAA Batteries (4-pack) are sold the most throughout the time period.
+
+> What is the average item qty per order?
+
+```{r}
+average_qty_per_order <- mean(cleaned_data$Quantity.Ordered)
+
+average_qty_per_order
+```
+
+The average quantity of items per order is around 1.
