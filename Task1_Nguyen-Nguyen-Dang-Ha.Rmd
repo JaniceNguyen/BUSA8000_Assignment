@@ -1,0 +1,600 @@
+---
+title: "Task1_Nguyen-Nguyen-Dang-Ha"
+author: "Janice"
+date: "2023-10-16"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Pre-processing
+
+## Import Libraries
+
+```         
+install.packages("rmarkdown")
+install.packages("dplyr")
+install.packages("readr")
+install.packages("tidyr")
+install.packages("lubridate")
+```
+
+## Use Libraries
+
+```{r}
+library(knitr)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+```
+
+## Set File Paths
+
+```{r}
+file_paths <- c(
+  "C:/Users/PC/Desktop/Janice/raw/01_Sales_Jan_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/02_Sales_Feb_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/03_Sales_Mar_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/04_Sales_Apr_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/05_Sales_May_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/06_Sales_Jun_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/07_Sales_Jul_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/08_Sales_Aug_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/09_Sales_Sep_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/10_Sales_Oct_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/11_Sales_Nov_2019.csv",
+  "C:/Users/PC/Desktop/Janice/raw/12_Sales_Dec_2019.csv"
+)
+```
+
+## Combine Data
+
+> Before merging all the files, I want to check if each column of each file is the same.
+
+```{r}
+column_names_are_same <- function(file_path1, file_path2) {
+  colnames1 <- colnames(read.csv(file_path1))
+  colnames2 <- colnames(read.csv(file_path2))
+  return(identical(colnames1, colnames2))
+}
+```
+
+> Check if all files have the same column structure, then return a message.
+
+```{r}
+all_same <- TRUE
+for (i in 1:(length(file_paths) - 1)) {
+  if (!column_names_are_same(file_paths[i], file_paths[i + 1])) {
+    all_same <- FALSE
+    break
+  }
+}
+
+if (all_same) {
+  cat("All CSV files have the same column structure (headers).")
+} else {
+  cat("Not all CSV files have the same column structure (headers).")
+}
+```
+
+> After confirming the similarity, I will proceed to merge all the files into a file called **merged_dataset**.
+
+```{r}
+merged_dataset <- data.frame()
+for (file_path in file_paths) {
+  # Read the CSV file
+  data <- read.csv(file_path, header = TRUE) # You may need to adjust the options if your files have different settings
+
+  # Append the data to the merged data frame
+  merged_dataset <- bind_rows(merged_dataset, data)
+}
+```
+
+## Load Data
+
+> Display the head of the **merged_dataset**.
+
+```{r}
+head(merged_dataset)
+```
+
+> Display the tail of the **merged_dataset**.
+
+```{r}
+tail(merged_dataset)
+```
+
+> Check the shape of the **merged_dataset**.
+
+```{r}
+df_shape <- dim(merged_dataset)
+print(df_shape)
+```
+
+## Data Cleaning and Wrangling Steps
+
+### Check Missing Values
+
+Count the number of missing values (NA) in each column and check for numeric or non-character columns with actual NA values.
+
+```{r}
+na_counts <- colSums(is.na(merged_dataset))
+print(na_counts)
+```
+
+Count the number of missing values represented by empty strings in each column and check for character columns where empty strings indicate missing data. 
+
+```{r}
+missing_values <- sapply(merged_dataset, function(x) sum(x %in% c("")))
+print(missing_values)
+```
+
+### Handle Missing Values
+
+Drop rows with missing values in all columns
+
+```{r}
+merged_dataset <- merged_dataset[rowSums(merged_dataset == "") != ncol(merged_dataset), ]
+```
+
+> Check the shape of the **merged_dataset**.
+
+```{r}
+df_shape <- dim(merged_dataset)
+print(df_shape)
+```
+
+> Double check for the missing values.
+
+```{r}
+missing_values <- sapply(merged_dataset, function(x) sum(x %in% c("")))
+print(missing_values)
+```
+
+> Identify a missing value in **Quantity.Ordered**.
+
+```{r}
+rows_with_missing_quantity <- which(merged_dataset$Quantity.Ordered == "")
+missing_rows <- merged_dataset[rows_with_missing_quantity, ]
+print(missing_rows)
+```
+
+Drop rows with **Order.ID** equal to **150509**.
+
+```{r}
+merged_dataset <- subset(merged_dataset, Order.ID != "150509")
+```
+
+> Double check for the missing values.
+
+```{r}
+missing_values <- sapply(merged_dataset, function(x) sum(x %in% c("")))
+print(missing_values)
+```
+
+### Check and Convert Datatype format
+
+> Check the consistency of **Order.ID**.
+
+```{r}
+column_data_types <- sapply(merged_dataset, class)
+print(column_data_types)
+```
+
+```{r}
+print(merged_dataset[1, "Order.ID"])
+```
+
+Because the datatype of the **Order.ID** column should be numeric instead of char as above, I will drop rows with character values to ensure data consistency.
+
+```{r}
+merged_dataset <- merged_dataset[!grepl("[A-Za-z]", merged_dataset$Order.ID), ]
+```
+
+Find rows with non-numeric characters in **Order.ID**.
+
+```{r}
+non_numeric_rows <- merged_dataset[!grepl("^[0-9]+$", merged_dataset$Order.ID), ]
+print(non_numeric_rows)
+```
+
+Drop rows with **Order.ID** equal to **###1222##**.
+
+```{r}
+merged_dataset <- subset(merged_dataset, Order.ID != "###1222##")
+```
+
+> Convert **Order.ID** to numeric:
+
+```{r}
+merged_dataset$Order.ID <- as.numeric(merged_dataset$Order.ID)
+```
+
+> Convert **Quantity.Ordered** to numeric:
+
+```{r}
+merged_dataset$Quantity.Ordered <- as.numeric(merged_dataset$Quantity.Ordered)
+```
+
+### Convert datatype format
+
+> I will convert **Quantity.Ordered** to be numeric, **Price.Each** to be numeric, and **Order.Date** to be a date or datetime type.
+
+-   Convert **Quantity.Ordered** to numeric:
+
+```{r}
+merged_dataset$Quantity.Ordered <- as.numeric(merged_dataset$Quantity.Ordered)
+```
+
+-   Convert **Price.Each** to numeric:
+
+```{r}
+merged_dataset$Price.Each <- as.numeric(merged_dataset$Price.Each)
+```
+
+> **Error:** The warning message "NAs introduced by coercion" typically means that some of the values in the **Price.Each** column of the dataset couldn't be converted to numeric because they are not valid numbers. 
+
+```{r}
+problematic_values <- merged_dataset$Price.Each[is.na(as.numeric(merged_dataset$Price.Each))]
+print(problematic_values)
+```
+
+Remove rows with missing values. 
+
+```{r}
+merged_dataset <- na.omit(merged_dataset)
+```
+
+```{r}
+problematic_values <- merged_dataset$Price.Each[is.na(as.numeric(merged_dataset$Price.Each))]
+print(problematic_values)
+```
+
+The output is numeric(0), it means that there are no more problematic values (NAs) in the Price.Each column after running the code. 
+
+-   Convert **Order.Date** to datetime:
+
+```{r}
+merged_dataset$Order.Date <- as.POSIXct(merged_dataset$Order.Date, format = "%m/%d/%Y %H:%M")
+```
+
+> Double-check the datatype of each column.
+
+```{r}
+column_data_types <- sapply(merged_dataset, class)
+print(column_data_types)
+```
+
+```{r}
+head(merged_dataset) 
+```
+
+### Split values
+
+#### **Purchase.Address** column
+
+Create new columns for **Address**, **City**, **State.Postal.Code**
+
+```{r}
+merged_dataset <- merged_dataset %>%
+  separate("Purchase.Address", into = c("Address", "City", "State.Postal.Code"), sep = ", ")
+```
+
+Find the index of 21673.
+
+```{r}
+merged_dataset[21673, ]
+```
+
+Drop rows with **Order.ID** equal to **112112**.
+
+```{r}
+merged_dataset <- subset(merged_dataset, Order.ID != "112112")
+```
+
+Identify rows in a **merged_dataset** where there are missing values in **Address**, **City**, and **State.Postal.Code**.
+
+```{r}
+# Find rows with missing pieces
+problematic_rows <- which(rowSums(is.na(merged_dataset[c("Address", "City", "State.Postal.Code")])) > 0)
+
+# Print the rows where the issue occurred
+print(merged_dataset[problematic_rows, "Purchase.Address"])
+```
+
+There are no problematic rows with missing pieces in **Address**, **City**, and **State.Postal.Code** so that I have a result of *NULL*.
+
+```{r}
+head(merged_dataset) 
+```
+
+Separate the **State.Postal.Code** column.
+
+```{r}
+merged_dataset <- merged_dataset %>%
+  separate("State.Postal.Code", into = c("State", "Postal.Code"), sep = " ")
+```
+
+> Double-check that the **Purchase.Address** column is split.
+
+```{r}
+head(merged_dataset)
+```
+
+#### **Order.Date** column
+
+Separate the **Order.Date** column into **Order.Date** and **Order.Time**.
+
+```{r}
+merged_dataset <- merged_dataset %>%
+  separate("Order.Date", into = c("Order.Date", "Order.Time"), sep = " ")
+```
+
+Find the index of 487.
+
+```{r}
+merged_dataset[487, ]
+```
+
+Drop all of the NA value.
+
+```{r}
+merged_dataset <- na.omit(merged_dataset)
+```
+
+Double check the existing of the index 487 (with *Order.ID* == "*141710*").
+
+```{r}
+merged_dataset %>% filter(Order.ID == "141710")
+```
+
+```{r}
+head(merged_dataset$Order.Date)
+```
+
+Convert the **Order.Time** from "char" to "date".
+
+```{r}
+merged_dataset$Order.Date <- as.Date(merged_dataset$Order.Date, 
+                                    format = ifelse(nchar(merged_dataset$Order.Date) == 8, "%y-%m-%d", "%Y-%m-%d"))
+```
+
+```{r}
+head(merged_dataset$Order.Date)
+```
+
+Find the unique year.
+
+```{r}
+unique_years <- unique(format(merged_dataset$Order.Date, "%Y"))
+print(unique_years) 
+```
+
+Check the existing of the **Order.Date** == "**2028**" and **Order.Date** == "**0001**".
+
+```{r}
+merged_dataset %>%
+  filter(format(Order.Date, "%Y") == "2028")
+```
+
+```{r}
+merged_dataset %>%
+  filter(format(Order.Date, "%Y") == "0001")
+```
+
+Drop rows with **Order.ID** equal to "**278809**" and "**295123**".
+
+```{r}
+merged_dataset <- subset(merged_dataset, Order.ID != "278809")
+merged_dataset <- subset(merged_dataset, Order.ID != "295123")
+```
+
+> Double-check that the **Order.Date** column is split.
+
+```{r}
+head(merged_dataset)
+```
+
+### Check The Consistency of the dataframe
+
+#### **Product** column
+
+Find the unique Product.
+
+```{r}
+unique_products <- unique(merged_dataset$Product)
+print(unique_products) 
+```
+
+Replace specific product names.
+
+```{r}
+merged_dataset$Product <- ifelse(merged_dataset$Product %in% c("AAA Batteries (4pack)", 
+                                                               "Goo0gle Phone", 
+                                                               "IPhone", 
+                                                               "LightCharging Cable", 
+                                                               "USBC Charging Cable", 
+                                                               "Wired Headphoness"),
+                                  c("AAA Batteries (4-pack)", 
+                                    "Google Phone", 
+                                    "iPhone", 
+                                    "Lightning Charging Cable", 
+                                    "USB-C Charging Cable", 
+                                    "Wired Headphones"),
+                                  merged_dataset$Product)
+
+```
+
+Remove rows with "*##system error##*" in the *Product* column.
+
+```{r}
+merged_dataset <- merged_dataset[merged_dataset$Product != "##system error##", ]
+```
+
+Find the updated unique products.
+
+```{r}
+unique_products <- unique(merged_dataset$Product)
+print(unique_products)
+```
+
+
+#### **Quantity.Ordered** column
+
+Find the unique quantity.
+
+```{r}
+unique_qty <- unique(merged_dataset$Quantity.Ordered)
+print(unique_qty) 
+```
+
+#### **City** column
+
+Find the unique city.
+
+```{r}
+unique_cities <- unique(merged_dataset$City)
+print(unique_cities) 
+```
+
+Replace specific city names.
+
+```{r}
+merged_dataset$City <- ifelse(merged_dataset$City %in% c("Las Angeles",
+                                                         "SanFrancisco"),
+                                  c("Los Angeles",
+                                    "San Francisco"),
+                                  merged_dataset$City)
+
+```
+
+Find the updated unique city.
+
+```{r}
+unique_cities <- unique(merged_dataset$City)
+print(unique_cities) 
+```
+
+#### **Sales** column
+
+Create a new column *Sales* in the dataset by multiplying *Quantity.Ordered* by *Price.Each*.
+
+```{r}
+merged_dataset$Sales <- merged_dataset$Quantity.Ordered * merged_dataset$Price.Each
+```
+
+
+### Double Check the Missing Values
+
+> Double-check to make sure the error data has been replaced with the correct data. 
+
+```{r}
+missing_percentage <- merged_dataset %>%
+     summarise_all(~ mean(is.na(.)) * 100)
+print(missing_percentage)
+```
+
+Count the number of missing values (NA) in each column and check for numeric or non-character columns with actual NA values.
+
+```{r}
+na_counts <- colSums(is.na(merged_dataset))
+print(na_counts)
+```
+
+Count the number of missing values represented by empty strings in each column and check for character columns where empty strings indicate missing data. 
+
+```{r}
+missing_values <- sapply(merged_dataset, function(x) sum(x %in% c("")))
+print(missing_values)
+```
+
+
+### Overview of the Cleaned Data
+
+```{r}
+df_shape <- dim(merged_dataset)
+print(df_shape)
+```
+
+```{r}
+summary(merged_dataset)
+```
+
+```{r}
+head(merged_dataset)
+```
+
+## Save Files
+
+> Save the cleaned dataset.
+
+```{r}
+write_csv(merged_dataset, "cleaned_sales.csv")
+```
+
+```{=html}
+<style>
+.toc {
+  border: 1px solid #e7e7e7;
+  background-color: #f9f9f9;
+  padding: 10px;
+  position: fixed;
+  top: 0;
+  right: 20px;
+  max-height: 90%;
+  overflow-y: auto;
+}
+.toc a {
+  text-decoration: none;
+  color: #333;
+}
+.toc a.active {
+  font-weight: bold;
+}
+
+</style>
+```
+```{=html}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const tocDiv = document.getElementById("toc");
+  const headers = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+
+  let currentLevel = 0;
+
+  headers.forEach(function(header) {
+    const level = parseInt(header.tagName[1]);
+    if (level > currentLevel) {
+      for (let i = currentLevel; i < level; i++) {
+        tocDiv.innerHTML += "<ul>";
+      }
+    } else if (level < currentLevel) {
+      for (let i = level; i < currentLevel; i++) {
+        tocDiv.innerHTML += "</ul>";
+      }
+    }
+    currentLevel = level;
+
+    tocDiv.innerHTML += `<li><a href="#${header.id}" class="${header.id === location.hash.substring(1) ? 'active' : ''}">${header.textContent}</a></li>`;
+  });
+
+  for (let i = currentLevel; i > 0; i--) {
+    tocDiv.innerHTML += "</ul>";
+  }
+});
+</script>
+```
