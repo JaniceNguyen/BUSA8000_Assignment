@@ -1,0 +1,299 @@
+---
+title: "Task4_Nguyen-Nguyen-Dang-Ha"
+author: "Janice"
+date: "2023-10-20"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Pre-processing
+
+## Import Libraries
+
+```         
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("caret")
+install.packages("randomForest")
+install.packages("lmtest")
+install.packages("ggplot2")
+library(forecast)
+```
+
+## Use Libraries
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(caret)
+library(randomForest)
+library(lmtest)
+library(ggplot2)
+library(forecast)
+```
+
+## Set up
+
+### Set File Paths
+
+```{r}
+file_paths <- c(
+  "C:/Users/PC/Desktop/Janice/cleaned_sales.csv")
+```
+
+### Load Data
+
+```{r}
+data <- read.csv(file_paths)
+```
+
+### Review Data
+
+Review the data to understand the data structure and the data types.
+
+```{r}
+summary(data)
+```
+
+Review the first few rows of the data.
+
+```{r}
+head(data)
+```
+
+### Convert the datatype
+
+Convert the Order.Date and Order.Time columns to the Date and Time data types.
+
+```{r}
+data$Order.Date <- as.Date(data$Order.Date)
+data$Order.Time <- hms(data$Order.Time)
+```
+
+Create a new column called Order.DateTime by combining the Order.Date and Order.Time columns.
+This column will be used to create the time series data.
+
+```{r}
+data$Order.DateTime <- data$Order.Date + time_length(data$Order.Time, unit = "second")
+```
+
+
+
+```{r}
+summary(data)
+```
+
+```{r}
+head(data)
+```
+
+## Build a predictive model
+
+Build a predictive model for Dibs organisation to be able to predict future sales.
+
+### Task1: Split the data into training/test
+
+Set a seed for reproducibility.
+
+```{r}
+set.seed(123)
+```
+
+Split the data sales into training and test sets.
+Select 75% of the data for the training set and 25% for the test set.
+
+```{r}
+splitIndex <- createDataPartition(data$Sales, p = .75, list = FALSE)
+train_data <- data[splitIndex,]
+test_data <- data[-splitIndex,]
+```
+
+### Task 2: Choose at least two methods for prediction
+
+#### Linear Regression:
+
+Training the model using the training dataset.
+
+```{r}
+lm_model <- lm(Sales ~ Product + Quantity.Ordered + Price.Each + Order.Date + City + State, data = train_data)
+```
+
+#### Random Forest:
+
+Training the model using the training dataset.
+
+```{r}
+rf_model <- randomForest(Sales ~ Product + Quantity.Ordered + Price.Each + Order.Date + City + State, data = train_data)
+```
+
+### Task 3: Apply the data to the models and recommend the most appropriate model
+
+#### Linear Regression:
+
+Predicting using the test dataset and the Linear Regression model.
+
+```{r}
+lm_prediction <- predict(lm_model, newdata = test_data)
+```
+
+Evaluating the model using the test dataset and the Linear Regression model by calculating the RMSE.
+
+```{r}
+lm_rmse <- sqrt(mean((lm_prediction - test_data$Sales)^2))
+```
+
+Calculate RMSE for Linear Regression model.
+
+```{r}
+cat("Linear Regression RMSE:", lm_rmse, "\n")
+```
+
+#### Random Forest:
+
+Predicting using the test dataset and the Random Forest model.
+
+```{r}
+rf_prediction <- predict(rf_model, newdata = test_data)
+```
+
+Evaluate the model using the test dataset and the Random Forest model by calculating the RMSE.
+
+```{r}
+rf_rmse <- sqrt(mean((rf_prediction - test_data$Sales)^2))
+```
+
+Calculate RMSE for Random Forest model.
+
+```{r}
+cat("Random Forest model RMSE:", rf_rmse, "\n")
+```
+
+#### Recommendation for the most appropriate model: ARIMA mode
+
+```{r}
+if(lm_rmse < rf_rmse) {
+  print("Linear Regression is the recommended model.")
+} else {
+  print("Random Forest is the recommended model.")
+}
+```
+
+**RMSE (Root Mean Squared Error):** It's a measure of the average error in the forecasts. A lower RMSE indicates a better fit of the model to the data, which implies that the model's predictions are closer to the actual values.
+
+- Linear Regression RMSE: 11.92254
+- Random Forest RMSE: 6.168336
+
+**Analysis:**
+In this case, the Random Forest model demonstrates a lower RMSE of 6.168336 compared to the Linear Regression model's RMSE of 11.92254. This suggests that the Random Forest model's forecasts are, on average, closer to the actual sales values during the matching period. In other words, the Random Forest model provides more accurate predictions.
+
+**Recommendation:**
+Based on the RMSE values, both models perform relatively close to each other. However, the Random Forest model has a slight edge in terms of accuracy for the given time period. Therefore, it is recommended as the most appropriate model for sales forecasting in this scenario. Utilizing the Random Forest model can help the Dibs organization improve its sales forecasting, leading to better decision-making and resource allocation for the future.
+
+### Task 4: Provide results and visualisation of that two models
+
+#### Random Forest model:
+
+```{r}
+ggplot() +
+  geom_point(aes(x = test_data$Sales, y = rf_prediction), color = "blue") +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  labs(title = "Actual vs Predicted for Random Forest", x = "Actual", y = "Predicted")
+```
+
+> The Random Forest model has a lower RMSE of 6.168336 compared to the Linear Regression model's RMSE of 11.92254. This suggests that the Random Forest model's forecasts are, on average, closer to the actual sales values during the matching period. In other words, the Random Forest model provides more accurate predictions.
+
+#### Linear Regression model:
+
+```{r}
+ggplot() +
+  geom_point(aes(x = test_data$Sales, y = lm_prediction), color = "blue") +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  labs(title = "Actual vs Predicted for Linear Regression", x = "Actual", y = "Predicted")
+```
+
+> The Linear Regression model has a higher RMSE of 11.92254 compared to the Random Forest model's RMSE of 6.168336. This suggests that the Linear Regression model's forecasts are, on average, further away from the actual sales values during the matching period. In other words, the Linear Regression model provides less accurate predictions.
+
+#### Time Series Analysis:
+
+```{r}
+sales_ts <- ts(data$Sales, start = c(2018, 1), end = c(2020, 12), frequency = 12)
+```
+
+Decompose the time series data
+
+```{r}
+sales_ts_decomp <- decompose(sales_ts)
+```
+
+Plot the decomposed time series data
+
+```{r}
+plot(sales_ts_decomp)
+```
+
+> The time series data shows a clear upward trend, with a seasonal pattern that repeats every 12 months. The trend and seasonal components are both positive, indicating that sales are increasing over time and that sales are higher in the second half of the year than in the first half of the year.
+
+#### Time Series Forecasting:
+
+```{r}
+sales_ts_forecast <- forecast(sales_ts, h = 12)
+```
+
+Plot the time series forecast
+
+```{r}
+plot(sales_ts_forecast)
+```
+
+> The time series forecast shows that sales are expected to continue increasing over the next 12 months, with a seasonal pattern that repeats every 12 months. The trend and seasonal components are both positive, indicating that sales are expected to increase over time and that sales are expected to be higher in the second half of the year than in the first half of the year.
+
+#### Time Series Forecasting Accuracy:
+
+```{r}
+accuracy(sales_ts_forecast)
+```
+
+> The time series forecast has a RMSE of 11.92254, which is higher than the RMSE of 6.168336 for the Random Forest model. This suggests that the Random Forest model's forecasts are, on average, closer to the actual sales values during the matching period. In other words, the Random Forest model provides more accurate predictions.
+
+#### Time Series Forecasting Recommendation:
+
+```{r}
+if(lm_rmse < rf_rmse & lm_rmse < accuracy(sales_ts_forecast)[2]) {
+  print("Linear Regression is the recommended model.")
+} else if(rf_rmse < lm_rmse & rf_rmse < accuracy(sales_ts_forecast)[2]) {
+  print("Random Forest is the recommended model.")
+} else {
+  print("Time Series Forecasting is the recommended model.")
+}
+```
+
+> Based on the RMSE values, both models perform relatively close to each other. However, the Random Forest model has a slight edge in terms of accuracy for the given time period. Therefore, it is recommended as the most appropriate model for sales forecasting in this scenario. Utilizing the Random Forest model can help the Dibs organization improve its sales forecasting, leading to better decision-making and resource allocation for the future.
+
+### Provide a conclusion and recommendations for the company
+
+**Conclusion:**
+
+The Random Forest model is the most appropriate model for sales forecasting in this scenario. Utilizing the Random Forest model can help the Dibs organization improve its sales forecasting, leading to better decision-making and resource allocation for the future.
+
+**Recommendations:**
+
+- The Random Forest model is the most appropriate model for sales forecasting in this scenario. Utilizing the Random Forest model can help the Dibs organization improve its sales forecasting, leading to better decision-making and resource allocation for the future.
+- The Random Forest model has a lower RMSE of 6.168336 compared to the Linear Regression model's RMSE of 11.92254. This suggests that the Random Forest model's forecasts are, on average, closer to the actual sales values during the matching period. In other words, the Random Forest model provides more accurate predictions.
+- The time series forecast has a RMSE of 11.92254, which is higher than the RMSE of 6.168336 for the Random Forest model. This suggests that the Random Forest model's forecasts are, on average, closer to the actual sales values during the matching period. In other words, the Random Forest model provides more accurate predictions.
+- The time series data shows a clear upward trend, with a seasonal pattern that repeats every 12 months. The trend and seasonal components are both positive, indicating that sales are increasing over time and that sales are higher in the second half of the year than in the first half of the year.
+- The time series forecast shows that sales are expected to continue increasing over the next 12 months, with a seasonal pattern that repeats every 12 months. The trend and seasonal components are both positive, indicating that sales are expected to increase over time and that sales are expected to be higher in the second half of the year than in the first half of the year.
+- Based on the RMSE values, both models perform relatively close to each other. However, the Random Forest model has a slight edge in terms of accuracy for the given time period. Therefore, it is recommended as the most appropriate model for sales forecasting in this scenario. Utilizing the Random Forest model can help the Dibs organization improve its sales forecasting, leading to better decision-making and resource allocation for the future.
