@@ -1,0 +1,264 @@
+---
+title: "Task3_Nguyen-Nguyen-Dang-Ha"
+author: "Janice"
+date: "2023-10-19"
+output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Import Libraries
+
+```
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("scales")
+```
+
+## Use Libraries
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(scales)
+```
+
+## Set up
+
+### Set File Paths
+
+```{r}
+file_paths <- c(
+  "C:/Users/PC/Desktop/Janice/cleaned_sales.csv")
+```
+
+### Load Data
+
+```{r}
+cleaned_data <- read.csv(file_paths)
+```
+
+### Review Data
+
+```{r}
+summary(cleaned_data)
+```
+
+```{r}
+head(cleaned_data)
+```
+
+### Convert the datatype
+
+```{r}
+cleaned_data$Order.Date <- as.Date(cleaned_data$Order.Date)
+```
+
+```{r}
+summary(cleaned_data)
+```
+
+```{r}
+head(cleaned_data)
+```
+
+## Report
+
+### Monthly sales trend vs monthly average sales
+
+Group data by month.
+
+```{r}
+monthly_sales <- cleaned_data %>%
+  mutate(YearMonth = format(Order.Date, "%Y-%m")) %>%
+  group_by(YearMonth) %>%
+  summarize(TotalSales = sum(Sales)) %>%
+  arrange(YearMonth)
+```
+
+Calculate monthly average sales.
+
+```{r}
+monthly_avg_sales <- mean(monthly_sales$TotalSales)
+```
+
+Create the trend line plot, adjusting the group aesthetic.
+
+```{r}
+ggplot(monthly_sales, aes(x = YearMonth, y = TotalSales, group = 1)) +
+  geom_line() +
+  geom_hline(yintercept = monthly_avg_sales, linetype = "dashed", color = "red") +
+  labs(x = "Month", y = "Total Sales") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  annotate("text", x = max(monthly_sales$YearMonth), y = monthly_avg_sales, 
+           label = paste("Avg Sales:", dollar_format()(monthly_avg_sales)), 
+           vjust = -1, hjust = 1) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ","))
+```
+
+### Sales by state
+
+Group data by state and calculate total sales.
+
+```{r}
+state_sales <- cleaned_data %>%
+  group_by(State) %>%
+  summarize(TotalSales = sum(Sales)) %>%
+  arrange(desc(TotalSales))
+```
+
+Set the order of states for the plot.
+
+```{r}
+state_sales$State <- factor(state_sales$State, levels = state_sales$State)
+```
+
+Create a bar plot of total sales by state.
+
+```{r}
+
+state_sales$State <- factor(state_sales$State, levels = state_sales$State)
+
+ggplot(state_sales, aes(x = State, y = TotalSales)) +
+  geom_bar(stat = "identity") +
+  labs(x = "State", y = "Total Sales") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ",")) +
+  geom_text(aes(label = comma(TotalSales)), vjust = -0.5, size = 3)
+```
+
+### Sales by city
+
+Group data by city and calculate total sales.
+
+```{r}
+city_sales <- cleaned_data %>%
+  group_by(City) %>%
+  summarize(TotalSales = sum(Sales)) %>%
+  arrange(desc(TotalSales))
+```
+
+Set the order of cities for the plot.
+
+```{r}
+city_sales$City <- factor(city_sales$City, levels = city_sales$City)
+```
+
+Create a bar plot of total sales by city.
+
+```{r}
+ggplot(city_sales, aes(x = City, y = TotalSales)) +
+  geom_bar(stat = "identity") +
+  labs(x = "City", y = "Total Sales") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ",")) +
+  geom_text(aes(label = comma(TotalSales)), vjust = -0.5, size = 3)
+```
+
+### Monthly order trend vs monthly average order
+
+Group data by month.
+
+```{r}
+monthly_orders <- cleaned_data %>%
+  mutate(YearMonth = format(Order.Date, "%Y-%m")) %>%
+  group_by(YearMonth) %>%
+  summarize(TotalOrders = n()) %>%
+  arrange(YearMonth)
+```
+
+Calculate monthly average orders.
+
+```{r}
+monthly_avg_orders <- mean(monthly_orders$TotalOrders)
+```
+
+Create the trend line plot, adjusting the group aesthetic.
+
+```{r}
+ggplot(monthly_orders, aes(x = YearMonth, y = TotalOrders, group = 1)) +
+  geom_line() +
+  geom_hline(yintercept = monthly_avg_orders, linetype = "dashed", color = "red") +
+  labs(x = "Month", y = "Total Orders") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  annotate("text", x = max(monthly_orders$YearMonth), y = monthly_avg_orders, 
+           label = paste("Avg Orders:", round(monthly_avg_orders, 2)), 
+           vjust = -1, hjust = 1) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ","))
+```
+
+### Daily order trend vs daily average
+
+Group data by day.
+
+```{r}
+daily_orders <- cleaned_data %>%
+  mutate(Order.Date = as.Date(Order.Date)) %>%
+  group_by(Order.Date) %>%
+  summarize(TotalOrders = n()) %>%
+  arrange(Order.Date)
+```
+
+Calculate daily average orders.
+
+```{r}
+daily_avg_orders <- mean(daily_orders$TotalOrders)
+```
+
+Create the trend line plot, adjusting the group aesthetic.
+
+```{r}
+ggplot(daily_orders, aes(x = Order.Date, y = TotalOrders)) +
+  geom_line() +
+  geom_hline(yintercept = daily_avg_orders, linetype = "dashed", color = "red") +
+  labs(x = "Date", y = "Total Orders") +
+  annotate("text", x = max(daily_orders$Order.Date), y = daily_avg_orders, 
+           label = paste("Avg Orders:", round(daily_avg_orders, 2)), 
+           vjust = -1, hjust = 1)
+```
+
+### Hourly order trend vs hourly average order
+
+Group data by hour.
+
+```{r}
+hourly_orders <- cleaned_data %>%
+  mutate(Order.Time = as.POSIXct(Order.Time, format = "%H:%M:%S")) %>%
+  group_by(Hour = format(Order.Time, "%H:00")) %>%
+  summarize(TotalOrders = n()) %>%
+  arrange(Hour)
+```
+
+Calculate hourly average orders.
+
+```{r}
+hourly_avg_orders <- mean(hourly_orders$TotalOrders)
+```
+
+Create the trend line plot, adjusting the group aesthetic.
+
+```{r}
+ggplot(hourly_orders, aes(x = Hour, y = TotalOrders, group = 1)) +
+  geom_line() +
+  geom_hline(yintercept = hourly_avg_orders, linetype = "dashed", color = "red") +
+  labs(x = "Hour of the Day", y = "Total Orders") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  annotate("text", x = max(hourly_orders$Hour), y = hourly_avg_orders, 
+           label = paste("Avg Orders:", round(hourly_avg_orders, 2)), 
+           vjust = -1, hjust = 1) +
+  scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ","))
+```
