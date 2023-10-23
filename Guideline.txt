@@ -1,0 +1,39 @@
+Background
+- Dibs is a retail company that is fast-growing online and specializes in selling a wide range of products, from accessories to home goods and electronics. Despite its rapid growth, the company has been struggling to increase its sales and customer loyalty. They have collected data on customer purchase history, but they are unsure how to use this data to their advantage. The company is interested in understanding its customers better and identifying patterns and trends in their behavior in order to improve its sales and marketing strategies.
+- The company has hired your team to analyse its data and provide insights that can inform its sales and marketing strategies. The team will use various data visualisation and statistical techniques to uncover insights that can help the company understand its customers better, identify patterns and trends in their behavior, and develop targeted sales and marketing campaigns. Additionally, the team will use machine learning techniques to build a predictive model that can be used to inform the company's sales and marketing strategies. The final goal is to provide the retail company with actionable recommendations that will help them increase their sales and customer loyalty.
+
+
+Tasks for the Project
+
+Task 1
+Clean the data (if necessary)
+
+Task 2
+Dibs management team are looking for answers to the following questions, answer the below questions:
+a. Which was the best Year for sales?
+b. How much was earned in the best Year of sales?
+c. Which was the best month for sales?
+d. How much was earned in the best month of sales?
+e. Which City had the most sales?
+f. To maximise the likelihood of customers buying a product, what time should Dibs business be displaying advertisements?
+g. Which products are most often sold together?
+h. Overall which product sold the most and why do you think it has sold the most?
+i. What is the average item qty per order?
+
+Task 3
+The visualizations that the management team would like to see include:
+a. Monthly sales trend vs monthly average sales
+b. Sales by state
+c. Sales by city
+d. Monthly order trend vs monthly average order
+e. Daily order trend vs daily average
+f. Hourly order trend vs hourly average order
+
+Task 4
+Build a predictive model for Dibs organisation to be able to predict future sales. In this model you are required to.
+a. Spit your data into training/test
+b. Choose at least two methods that you will use for prediction
+c. Apply your data to the models and recommend the most appropriate model
+d. Provide results and visualisation of your two models
+
+Provide justification and reason for the model you have recommended
