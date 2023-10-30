@@ -78,12 +78,35 @@ head(cleaned_data)
 
 ## Report
 
+Get the unique YearMonth in 2020
+
+```{r}
+year_2019_data <- cleaned_data[format(cleaned_data$Order.Date, "%Y") == "2020", ]
+unique_yearmonths_2019 <- unique(format(year_2019_data$Order.Date, "%Y-%m"))
+unique_yearmonths_2019
+```
+
+Get the unique dates January 2020
+
+```{r}
+january_2020_data <- cleaned_data[format(cleaned_data$Order.Date, "%Y-%m") == "2020-01", ]
+unique_dates_january_2020 <- unique(format(january_2020_data$Order.Date, "%Y-%m-%d"))
+unique_dates_january_2020 
+```
+
+Because there is only data for January 1, 2020 and it cannot represent January, I only took 2019 data to use for the visualization.
+
+```{r}
+# Filter for the year 2019
+data_2019 <- cleaned_data[format(cleaned_data$Order.Date, "%Y") == "2019", ]
+```
+
 ### Monthly sales trend vs monthly average sales
 
 Group data by month.
 
 ```{r}
-monthly_sales <- cleaned_data %>%
+monthly_sales_2019 <- data_2019 %>%
   mutate(YearMonth = format(Order.Date, "%Y-%m")) %>%
   group_by(YearMonth) %>%
   summarize(TotalSales = sum(Sales)) %>%
@@ -93,18 +116,18 @@ monthly_sales <- cleaned_data %>%
 Calculate monthly average sales.
 
 ```{r}
-monthly_avg_sales <- mean(monthly_sales$TotalSales)
+monthly_avg_sales <- mean(monthly_sales_2019$TotalSales)
 ```
 
 Create the trend line plot, adjusting the group aesthetic.
 
 ```{r}
-ggplot(monthly_sales, aes(x = YearMonth, y = TotalSales, group = 1)) +
+ggplot(monthly_sales_2019, aes(x = YearMonth, y = TotalSales, group = 1)) +
   geom_line() +
   geom_hline(yintercept = monthly_avg_sales, linetype = "dashed", color = "red") +
   labs(x = "Month", y = "Total Sales") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  annotate("text", x = max(monthly_sales$YearMonth), y = monthly_avg_sales, 
+  annotate("text", x = max(monthly_sales_2019$YearMonth), y = monthly_avg_sales, 
            label = paste("Avg Sales:", dollar_format()(monthly_avg_sales)), 
            vjust = -1, hjust = 1) +
   scale_y_continuous(labels = scales::comma_format(scale = 1, big.mark = ","))
@@ -174,7 +197,7 @@ ggplot(city_sales, aes(x = City, y = TotalSales)) +
 Group data by month.
 
 ```{r}
-monthly_orders <- cleaned_data %>%
+monthly_orders <- data_2019 %>%
   mutate(YearMonth = format(Order.Date, "%Y-%m")) %>%
   group_by(YearMonth) %>%
   summarize(TotalOrders = n()) %>%
@@ -206,7 +229,7 @@ ggplot(monthly_orders, aes(x = YearMonth, y = TotalOrders, group = 1)) +
 Group data by day.
 
 ```{r}
-daily_orders <- cleaned_data %>%
+daily_orders <- data_2019 %>%
   mutate(Order.Date = as.Date(Order.Date)) %>%
   group_by(Order.Date) %>%
   summarize(TotalOrders = n()) %>%
